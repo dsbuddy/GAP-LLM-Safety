@@ -4,6 +4,8 @@
 
 This repository contains the implementation of GAP (Graph of Attacks with Pruning), a novel extension of the Tree of Attacks with Pruning (TAP) method for automated jailbreaking of Large Language Models (LLMs). GAP is integrated into the EasyJailbreak framework, providing enhanced capabilities for LLM security research.
 
+**Paper:** [Graph of Attacks with Pruning: Optimizing Stealthy Jailbreak Prompt Generation for Enhanced LLM Content Moderation](https://arxiv.org/abs/2501.18638) (arXiv:2501.18638)
+
 ### Key Innovations of GAP
 
 GAP introduces several significant improvements over the original TAP method:
