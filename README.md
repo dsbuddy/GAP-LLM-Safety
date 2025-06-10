@@ -6,29 +6,80 @@ This repository contains the implementation of GAP (Graph of Attacks with Prunin
 
 **Paper:** [Graph of Attacks with Pruning: Optimizing Stealthy Jailbreak Prompt Generation for Enhanced LLM Content Moderation](https://arxiv.org/abs/2501.18638) (arXiv:2501.18638)
 
-### Key Innovations of GAP
+## Quick Start
 
-GAP introduces several significant improvements over the original TAP method:
+```bash
+# Clone the repository
+git clone https://github.com/EasyJailbreak/EasyJailbreak.git
 
-1. **Global Conversation History**
-   - Maintains a comprehensive history of successful attack patterns across all branches
-   - Enables pattern recognition and learning from past successful attempts
-   - Doubles the number of messages to be `2*keep_last_n` with `keep_last_n` of the original branch's messages and `keep_last_n` from the global conversation history
+# Create and activate a virtual environment (recommended)
+conda create -n gap-env python=3.9
+conda activate gap-env
 
-2. **Aggregate Scoring**
-   - Uses pattern recognition across the entire attack graph
-   - Implements score-based sampling for selecting promising conversation patterns
-   - Maintains a global `conversation_history` list for tracking effective patterns
+# Install dependencies
+pip install -e .
 
-3. **Enhanced Pruning**
-   - More sophisticated pruning mechanisms that consider historical success patterns
-   - DeleteOffTopic constraint to remove irrelevant jailbreak attempts
-   - Pattern-based filtering of conversation history
+# Set environment variables (only if using GPU)
+export OPENAI_KEY="your-key-here"
+```
 
-4. **Pattern-based Refinement**
-   - Leverages successful patterns to guide future attacks
-   - Implements the `IntrospectGenerationAggregateMaxConcatenate` class for advanced mutation
-   - Uses historical insights to improve attack effectiveness
+## Key Features
+
+### 1. Core Innovations vs TAP
+
+- **Global Conversation History**
+  - Maintains comprehensive attack pattern history
+  - Enables learning from past successful attempts
+  - Doubles message history with global conversation patterns
+
+- **Enhanced Pruning**
+  - Sophisticated pruning based on historical success
+  - DeleteOffTopic constraint for irrelevant attempts
+  - Pattern-based filtering of conversation history
+
+- **Pattern-based Refinement**
+  - Uses successful patterns to guide future attacks
+  - Advanced mutation with `IntrospectGenerationAggregateMaxConcatenate`
+
+### 2. Usage Examples
+
+#### Standard GAP Attack
+
+```python
+from easyjailbreak.attacker.GAP_Schwartz_2024 import GAP
+from easyjailbreak.models.huggingface_model import from_pretrained
+from easyjailbreak.datasets.jailbreak_datasets import JailbreakDataset
+
+# Initialize models
+attack_model = from_pretrained('lmsys/vicuna-13b-v1.5')
+target_model = from_pretrained('meta-llama/Llama-2-7b-chat-hf')
+eval_model = from_pretrained('gpt-4')
+
+# Create dataset
+dataset = JailbreakDataset('AdvBench')
+
+# Initialize and run GAP
+attacker = GAP(
+    attack_model=attack_model,
+    target_model=target_model,
+    eval_model=eval_model,
+    jailbreak_datasets=dataset,
+    tree_width=10,
+    tree_depth=10,
+    selection_strategy='max_score'
+)
+attacker.attack()
+attacker.save_results('gap_results.jsonl')
+```
+
+#### Cold Start Approach
+
+```python
+dataset = JailbreakDataset(
+    local_file_type='json',
+    # ... additional parameters
+)
+```
 
 ## Repository Structure
 
@@ -55,10 +106,10 @@ easyjailbreak-root-github-package/
 │   │   ├── evaluate_diversity_prompts.py
 │   │   ├── format_cold_start_dataset.py
 │   │   └── README_coldstart.md
-│   ├── fine_tune/                        # Model fine-tuning
+│   ├── fine_tune/
 │   │   ├── fine_tune_prompt_guard_experiment_paper.py
 │   │   └── README_finetune.md
-│   ├── mitigation/                       # Defense mechanisms
+│   ├── mitigation/
 │   │   ├── analyze_prompt_guard_scores.py
 │   │   ├── run_llamaguard_experiment.py
 │   │   ├── run_perplexity_experiment.py
@@ -71,47 +122,11 @@ easyjailbreak-root-github-package/
 └── README-easyjailbreak.md              # Main framework documentation
 ```
 
-## Installation and Setup
+## Technical Details
 
-### Prerequisites
-- Python 3.9+
-- CUDA-capable GPU(s) recommended
-- OpenAI API key (for certain models)
+### 1. Core Components
 
-### Installation Steps
-
-```bash
-# Clone the repository
-git clone https://github.com/EasyJailbreak/EasyJailbreak.git
-cd EasyJailbreak
-
-# Install dependencies
-pip install -e .
-
-# Set up environment variables
-export CUDA_VISIBLE_DEVICES="0,1,2,3"
-export OPENAI_KEY="your-key-here"
-```
-
-### Required Dependencies
-```
-torch
-transformers
-pandas
-numpy
-seaborn
-matplotlib
-scipy
-boto3 (for LlamaGuard)
-sagemaker (for LlamaGuard)
-easyjailbreak
-```
-
-## Core Components
-
-### 1. GAP Implementation (GAP_Schwartz_2024.py)
-
-The GAP attacker class includes several key components:
+#### GAP Implementation
 
 ```python
 class GAP:
@@ -125,77 +140,65 @@ class GAP:
                  root_num=1,
                  branching_factor=4,
                  keep_last_n=3,
-                 selection_strategy='max_score'):
+                 selection_strategy='max_score')
 ```
 
-Key parameters:
-- `tree_width`: Maximum width of conversation nodes
-- `tree_depth`: Maximum iteration depth
-- `root_num`: Number of parallel attack graphs
-- `branching_factor`: Children nodes per parent
-- `keep_last_n`: Conversation history length
-- `selection_strategy`: Strategy for selecting conversation patterns
+#### Mutation Strategies
 
-### 2. Mutation Strategies
-
-#### IntrospectGenerationAggregateMaxConcatenate (GAP)
 ```python
 class IntrospectGenerationAggregateMaxConcatenate(MutationBase):
     def _get_mutated_instance(self, instance, conversation_history, *args, **kwargs):
-        # Sample high-performing conversations
         sampled_conversations = self.sample_max_score(conversation_history)
-        
-        # Combine with current context
         conv.messages = sampled_conversations + conv.messages[-self.keep_last_n*2:]
 ```
 
-#### IntrospectGeneration (TAP)
-```python
-class IntrospectGeneration(MutationBase):
-    def _get_mutated_instance(self, instance, *args, **kwargs):
-        # Basic conversation management
-        conv.messages = conv.messages[-self.keep_last_n:]
+### 2. System Requirements
+
+- Python 3.9+
+- CUDA-capable GPU (recommended)
+- OpenAI API key (for certain models)
+
+### 3. Required Dependencies
+
+```
+torch
+transformers
+pandas
+numpy
+seaborn
+matplotlib
+scipy
+boto3 (for LlamaGuard)
+sagemaker (for LlamaGuard)
+easyjailbreak
 ```
 
-## Usage Examples
+## Analysis Tools
 
-### 1. Standard GAP Attack
+The framework includes tools for analyzing defense effectiveness:
 
-```python
-from easyjailbreak.attacker.GAP_Schwartz_2024 import GAP
-from easyjailbreak.models.huggingface_model import from_pretrained
-from easyjailbreak.datasets.jailbreak_datasets import JailbreakDataset
+- **Prompt Guard Analysis**: `examples/mitigation/analyze_prompt_guard_scores.py`
+  - Reads Prompt Guard CSV results
+  - Computes safe/unsafe classifications
+  - Provides detailed scores
 
-# Initialize models
-attack_model = from_pretrained('lmsys/vicuna-13b-v1.5')
-target_model = from_pretrained('meta-llama/Llama-2-7b-chat-hf')
-eval_model = from_pretrained('gpt-4')
+- **Perplexity Analysis**: `examples/mitigation/perplexity_get_counts.py`
+  - Reads perplexity-based defense CSV
+  - Performs statistical tests:
+    - Kolmogorov-Smirnov
+    - Anderson-Darling
+    - Mann-Whitney U
+  - Generates visualizations:
+    - Violin plots
+    - KDE curves
 
-# Create dataset
-dataset = JailbreakDataset('AdvBench')
+## Contributing
 
-# Initialize GAP attacker
-attacker = GAP(
-    attack_model=attack_model,
-    target_model=target_model,
-    eval_model=eval_model,
-    jailbreak_datasets=dataset,
-    tree_width=10,
-    tree_depth=10,
-    selection_strategy='max_score'
-)
+[To be added]
 
-# Run attack and save results
-attacker.attack()
-attacker.save_results('gap_results.jsonl')
-```
+## License
 
-### 2. Cold Start Approach
-
-```python
-# Using cold start dataset
-dataset = JailbreakDataset(
-    local_file_type='json',
+[To be added]
     dataset='../easyjailbreak/datasets/data/cold_start_generated_seeds_target_response_all_shuffled_ordered.json'
 )
 
@@ -684,15 +687,20 @@ All three mitigation strategies provide comprehensive evaluation metrics:
 
 The framework includes tools for analyzing defense effectiveness:
 
-```python
-python examples/mitigation/analyze_prompt_guard_scores.py  # Analyze Prompt Guard results
-python examples/mitigation/perplexity_get_counts.py       # Analyze perplexity distributions
-```
-
-This generates:
-- CSV files with detailed scores
-- Statistical significance tests
-- Visualization plots
-- Method comparison reports
+- **Analyze Prompt Guard results**: `examples/mitigation/analyze_prompt_guard_scores.py`
+  - Reads in the CSV file generated by the Prompt Guard defense
+  - Computes counts of safe/unsafe classifications
+  - Provides detailed scores for each method
+- **Analyze perplexity distributions**: `examples/mitigation/perplexity_get_counts.py`
+  - Reads in the CSV file generated by the perplexity-based defense
+  - Computes counts of perplexity scores above/below a specified threshold
+  - Performs statistical significance tests:
+    - Kolmogorov-Smirnov test
+    - Anderson-Darling test
+    - Mann-Whitney U test
+  - Generates visualization plots:
+    - Violin plots showing score distributions
+    - KDE curves for pattern analysis
+  - Provides method comparison reports
 
 The mitigation strategies can be used individually or combined for enhanced protection against jailbreak attempts.
