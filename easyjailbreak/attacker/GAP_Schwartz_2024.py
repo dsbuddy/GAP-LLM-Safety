@@ -12,7 +12,7 @@ from easyjailbreak.datasets.instance import Instance
 from easyjailbreak.loggers.logger import Logger
 from easyjailbreak.models.huggingface_model import HuggingfaceModel
 from easyjailbreak.models.openai_model import OpenaiModel
-from easyjailbreak.models.bedrock_mistral_model import MistralModell
+from easyjailbreak.models.bedrock_mistral_model import MistralModel
 ####### 4 major components #######
 from easyjailbreak.seed.seed_template import SeedTemplate
 from easyjailbreak.mutation.generation.IntrospectGenerationAggregateMaxConcatenate import IntrospectGeneration
