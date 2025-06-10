@@ -19,6 +19,7 @@ from fastchat.model import get_conversation_template
 from easyjailbreak.mutation import MutationBase
 from easyjailbreak.datasets import Instance
 from easyjailbreak.models.huggingface_model import HuggingfaceModel
+from easyjailbreak.models.bedrock_mistral_model import MistralModel
 from easyjailbreak.models.openai_model import OpenaiModel
 
 r"""

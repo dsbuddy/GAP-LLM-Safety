@@ -151,7 +151,7 @@ class TAP(AttackerBase):
         Execute the attack process using provided prompts.
         """
         # To calculate how many times are eval_model.generate() called
-        global target_model_calls
+        # global target_model_calls
         logging.info("Jailbreak started!")
         try:
             for Instance in tqdm(self.jailbreak_datasets, desc="Processing instances"):
@@ -179,7 +179,7 @@ class TAP(AttackerBase):
         :param ~Instance instance: The Instance that is attacked.
         :return ~JailbreakDataset: returns the attack result dataset.
         """
-        global target_model_calls
+        # global target_model_calls
         batch=[JailbreakDataset([instance.copy()]) for _ in range(self.root_num)]
         find_flag = 0
         print(f"QUERY:{'='*20}\n{instance.query}")
