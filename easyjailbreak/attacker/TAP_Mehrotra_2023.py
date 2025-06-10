@@ -31,7 +31,7 @@ EasyJailbreak TAP class
 """
 __all__ = ['TAP']
 
-target_model_calls = 0
+# target_model_calls = 0
 
 class TAP(AttackerBase):
     r"""
@@ -91,6 +91,7 @@ class TAP(AttackerBase):
                          target_model=target_model,
                          eval_model=eval_model,
                          jailbreak_datasets=jailbreak_datasets)
+        self.target_model_calls = 0
         self.seeds=SeedTemplate().new_seeds(1,method_list=['TAP'],template_file=template_file)
 
         ####### 4 major components ##########
@@ -163,8 +164,8 @@ class TAP(AttackerBase):
         print(f'jailbreak_prompt:{[instance.jailbreak_prompt for instance in self.jailbreak_Dataset]}')
         print(f'target_responses:{[instance.target_responses[0] for instance in self.jailbreak_Dataset]}')
         print(f"ASR:{100*self.current_jailbreak/self.current_query}%")
-        print(f"Total calls of generate:{target_model_calls}")
-        print(f"Eval calls of generate:{self.evaluator.eval_model.generate.count_calls - target_model_calls}")
+        print(f"Total calls of generate:{self.target_model_calls}")
+        print(f"Eval calls of generate:{self.evaluator.eval_model.generate.count_calls - self.target_model_calls}")
         self.log()
         logging.info("Jailbreak finished!")
         self.jailbreak_Dataset.save_to_jsonl(save_path)
@@ -210,7 +211,7 @@ class TAP(AttackerBase):
                                                     temperature=self.target_temperature, do_sample=True,
                                                     top_p=self.target_top_p,
                                                     eos_token_id=self.target_model.tokenizer.eos_token_id)]
-                    target_model_calls+=1
+                    self.target_model_calls+=1
 
                 ############# prune not-jailbroken jailbreak_prompt ################
                 num_responses = len(new_dataset)

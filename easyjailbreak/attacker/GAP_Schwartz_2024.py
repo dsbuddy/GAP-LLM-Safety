@@ -28,7 +28,7 @@ EasyJailbreak GAP class
 """
 __all__ = ['GAP']
 
-target_model_calls = 0
+# target_model_calls = 0
 
 class GAP(AttackerBase):
     r"""
@@ -90,6 +90,8 @@ class GAP(AttackerBase):
                          target_model=target_model,
                          eval_model=eval_model,
                          jailbreak_datasets=jailbreak_datasets)
+        # Add this line to initialize the counter
+        self.target_model_calls = 0
         self.seeds=SeedTemplate().new_seeds(1,method_list=['GAP'],template_file=template_file)
         self.logging_filename = logging_filename
 
@@ -224,7 +226,7 @@ class GAP(AttackerBase):
                 print(f'jailbreak_prompt:{[instance.jailbreak_prompt for instance in self.jailbreak_Dataset]}')
                 print(f'target_responses:{[instance.target_responses[0] for instance in self.jailbreak_Dataset]}')
                 print(f"ASR:{100*self.current_jailbreak/self.current_query}%")
-                print(f"Total calls to target model:{target_model_calls}")
+                print(f"Total calls to target model:{self.target_model_calls}")
                 # print(f"Eval calls of generate:{self.evaluator.eval_model.generate.calls - target_model_calls}")
                 self.log()
                 logging.info("Jailbreak finished!")
@@ -242,7 +244,7 @@ class GAP(AttackerBase):
         print(f'jailbreak_prompt:{[instance.jailbreak_prompt for instance in self.jailbreak_Dataset]}')
         print(f'target_responses:{[instance.target_responses[0] for instance in self.jailbreak_Dataset]}')
         print(f"ASR:{100*self.current_jailbreak/self.current_query}%")
-        print(f"Total calls to target model:{target_model_calls}")
+        print(f"Total calls to target model:{self.target_model_calls}")
         # print(f"Eval calls of generate:{self.evaluator.eval_model.generate.calls - target_model_calls}")
         self.log()
         logging.info("Jailbreak finished!")
@@ -298,7 +300,7 @@ class GAP(AttackerBase):
                                                     top_p=self.target_top_p,
                                                     eos_token_id=self.target_model.tokenizer.eos_token_id)]
                     print("\n\nOutput:\n{}\n????????????????????????????\n\n".format(instance.target_responses))
-                    target_model_calls+=1
+                    self.target_model_calls+=1
 
                 ############# prune not-jailbroken jailbreak_prompt ################
                 num_responses = len(new_dataset)
