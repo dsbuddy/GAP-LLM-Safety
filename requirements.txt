@@ -9,3 +9,6 @@ pandas
 accelerate
 fschat
 jsonlines
+easyjailbreak
+boto3
+backoff

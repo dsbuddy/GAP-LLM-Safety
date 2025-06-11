@@ -1,43 +1,40 @@
 from setuptools import setup, find_packages
+from pathlib import Path
+
+# Read requirements from requirements.txt
+def load_requirements():
+    reqs = []
+    with open('requirements.txt') as f:
+        for line in f:
+            # Remove comments and whitespace
+            line = line.split('#')[0].strip()
+            if line and not line.startswith('--'):  # Skip empty lines and flags
+                reqs.append(line)
+    return reqs
 
 setup(
-    name="easyjailbreak",
-    version="0.1.2",
-    description="Easy Jailbreak toolkit",
-    author="ZenithX",
-    author_email="waltersumbon@gmail.com",
-    url="https://github.com/EasyJailbreak/EasyJailbreak",
-    packages=find_packages(include=('easyjailbreak*',)),
-    install_requires=[
-        'transformers>=4.34.0',
-        'protobuf',
-        'sentencepiece',
-        'datasets',
-        'torch>=2.0',
-        'openai>=1.0.0',
-        'numpy',
-        'pandas',
-        'accelerate',
-        'fschat',
-        'jsonlines',
-        'einops',
-        'nltk',
-        'transformers_stream_generator',
-    ],
+    name="gap-easyjailbreak",
+    version="0.1.0",
+    description="Easy Jailbreak toolkit - GAP extension",
+    author="Daniel Schwartz and Yanjun Qi",
+    url="https://github.com/dsbuddy/GAP-LLM-Safety",
+    packages=find_packages(include=('gap-easyjailbreak*',)),
+    install_requires=load_requirements(),
     python_requires=">=3.9",
-    keywords=['jailbreak', 
-              'llm security', 
-              'llm safety benchmark',
-              'large language model',
-              'jailbreak framework',
-              'jailbreak prompt',
-              'discrete optimization'
-             ],
-    license='GNU General Public License v3.0',
+    keywords=[
+        'jailbreak', 
+        'large language model',
+        'jailbreak framework',
+        'jailbreak prompt',
+        'discrete optimization',
+        'graph of thoughts with pruning attacks',
+        'security',
+    ],
+    license='MIT License',
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3"
     ]
 )
