@@ -27,10 +27,10 @@ export OPENAI_KEY="your-key-here"  # Only if using OpenAI models
 
 ## Key Features
 
-### 1. Core Innovations vs TAP
+### 1. Core Innovations vs TAP (Tree of Attacks with Pruning [TAP](https://arxiv.org/abs/2312.02119))
 
 - **Global Conversation History**
-  - Maintains comprehensive attack pattern history across all branches
+  - Maintains comprehensive attack pattern history across all branches, so graph of thought is built
   - Enables learning from past successful attempts
   - Doubles message history with global conversation patterns (`2*keep_last_n`)
 
@@ -46,17 +46,20 @@ export OPENAI_KEY="your-key-here"  # Only if using OpenAI models
 
 ### 2. Usage Examples
 
-#### Standard GAP Attack
+#### Standard GAP Attack API (Recommended)
 
 ```python
-from easyjailbreak.attacker.GAP_Schwartz_2024 import GAP
+import easyjailbreak
+import gap_easyjailbreak
+from gap_easyjailbreak.attacker.GAP_Schwartz_2024 import GAP
 from easyjailbreak.models.huggingface_model import from_pretrained
 from easyjailbreak.datasets.jailbreak_datasets import JailbreakDataset
+from easyjailbreak.models.openai_model import OpenaiModel
 
 # Initialize models
-attack_model = from_pretrained('lmsys/vicuna-13b-v1.5')
-target_model = from_pretrained('meta-llama/Llama-2-7b-chat-hf')
-eval_model = from_pretrained('gpt-4')
+attack_model = from_pretrained(model_name_or_path='lmsys/vicuna-13b-v1.5', model_name='vicuna_v13b')
+target_model = from_pretrained(model_name_or_path='meta-llama/Llama-2-7b-chat-hf', model_name='llama-2')
+eval_model = OpenaiModel(model_name='gpt-4', api_keys='your-key-here')
 
 # Create dataset
 dataset = JailbreakDataset('AdvBench')
@@ -71,11 +74,10 @@ attacker = GAP(
     tree_depth=10,
     selection_strategy='max_score'
 )
-attacker.attack()
-attacker.save_results('gap_results.jsonl')
+attacker.attack(save_path='gap_results.jsonl')
 ```
 
-#### Cold Start Approach
+#### Cold Start Approach via API usage
 
 ```python
 # Using cold start dataset
@@ -84,7 +86,7 @@ dataset = JailbreakDataset(
     dataset='../easyjailbreak/datasets/data/cold_start_generated_seeds_target_response_all_shuffled_ordered.json'
 )
 
-# Initialize GAP with cold start configuration
+# Initialize GAP with cold start configuration      
 attacker = GAP(
     attack_model=attack_model,
     target_model=target_model,
@@ -95,6 +97,17 @@ attacker = GAP(
     selection_strategy='baseline'
 )
 ```
+
+### Driver Scripts Usage Way Overview 
+
+- Under the folder `scripts`, there are three driver scripts for running LLM jailbreak attacks using different approaches and configurations.
+
+- `run_GAP_coldstart.py` - Novel cold-start approach using GAP with custom generated seeds
+- `run_GAP.py` - Standard GAP implementation using benchmark datasets
+- `run_TAP_debug.py` - Enhanced TAP implementation with detailed logging and metrics
+
+- The detailed guide of these driver scripts is detailed in the `scripts/README_driver.md` file.
+
 
 ## Repository Structure
 
@@ -111,7 +124,7 @@ easyjailbreak-root-github-package/
 │           ├── IntrospectGeneration.py    # Original TAP mutation
 │           ├── IntrospectGenerationAggregateMaxConcatenate.py  # GAP mutation
 │           └── README_mutation.md         # Mutation documentation
-├── examples/
+├── scripts/
 │   ├── cold_start/                       # Cold start implementation
 │   │   ├── HarmOnTopic.py
 │   │   ├── cold_start_generate_seeds.py
@@ -134,7 +147,7 @@ easyjailbreak-root-github-package/
 │   ├── run_GAP_coldstart.py             # Cold start GAP runner
 │   ├── run_TAP_debug.py                 # Debug TAP runner
 │   └── README_driver.md                 # Runner documentation
-└── README-easyjailbreak.md              # Main framework documentation
+└── README.md                            # Main framework documentation
 ```
 
 ## Technical Details
@@ -142,6 +155,8 @@ easyjailbreak-root-github-package/
 ### 1. Core Components
 
 #### GAP Implementation
+
+- gap_easyjailbreak/attacker/GAP_Schwartz_2024.py includes the Main GAP implementation
 
 ```python
 class GAP:
@@ -207,7 +222,7 @@ Generate initial attack datasets without relying on existing jailbreak examples:
 
 #### Harmful Seed Generation
 ```bash
-python examples/cold_start/cold_start_generate_seeds.py \
+python scripts/cold_start/cold_start_generate_seeds.py \
     --model "mistral.mistral-large-2407-v1:0" \
     --eval_model "anthropic.claude-3-sonnet-20240229-v1:0" \
     --min_behaviors 100 \
@@ -216,21 +231,21 @@ python examples/cold_start/cold_start_generate_seeds.py \
 
 #### Target Response Generation
 ```bash
-python examples/cold_start/cold_start_generate_target_responses.py \
+python scripts/cold_start/cold_start_generate_target_responses.py \
     --model "mistral.mistral-large-2407-v1:0" \
     --max_tries 5
 ```
 
 #### Benign Alternative Generation
 ```bash
-python examples/cold_start/cold_start_generate_seeds_benign.py \
+python scripts/cold_start/cold_start_generate_seeds_benign.py \
     --model "mistral.mistral-large-2407-v1:0" \
     --eval_model "anthropic.claude-3-sonnet-20240229-v1:0"
 ```
 
 #### Diversity Analysis
 ```bash
-python examples/cold_start/cold_start_measure_diversity.py
+python scripts/cold_start/cold_start_measure_diversity.py
 ```
 
 Features:
@@ -244,7 +259,7 @@ Features:
 Adapt the Prompt-Guard-86M model for enhanced jailbreak detection:
 
 ```bash
-python examples/fine_tune/fine_tune_prompt_guard_experiment_paper.py \
+python scripts/fine_tune/fine_tune_prompt_guard_experiment_paper.py \
     --learning_rate 4e-6 \
     --batch_size 32 \
     --epochs 1 \
@@ -277,7 +292,7 @@ Three sophisticated defense mechanisms:
 
 #### Prompt Guard Defense
 ```bash
-python examples/mitigation/run_prompt_guard_experiment.py \
+python scripts/mitigation/run_prompt_guard_experiment.py \
     --model_path "prompt_guard_finetuned_5e7_2.pth" \
     --batch_size 32 \
     --temperature 3.0
@@ -285,7 +300,7 @@ python examples/mitigation/run_prompt_guard_experiment.py \
 
 #### Perplexity-based Detection
 ```bash
-python examples/mitigation/run_perplexity_experiment.py \
+python scripts/mitigation/run_perplexity_experiment.py \
     --threshold -1.0 \
     --window_size 10 \
     --model "meta-llama/Llama-2-7b-chat-hf"
@@ -294,12 +309,12 @@ python examples/mitigation/run_perplexity_experiment.py \
 #### LlamaGuard Integration
 ```bash
 # LlamaGuard v1 (API)
-python examples/mitigation/run_llamaguard_experiment.py \
+python scripts/mitigation/run_llamaguard_experiment.py \
     --endpoint_name "llamaguard-endpoint" \
     --profile_name "your-profile"
 
 # LlamaGuard v2 (Local)
-python examples/mitigation/run_llamaguard2_experiment.py \
+python scripts/mitigation/run_llamaguard2_experiment.py \
     --model "meta-llama/Meta-Llama-Guard-2-8B"
 ```
 
@@ -308,12 +323,12 @@ python examples/mitigation/run_llamaguard2_experiment.py \
 The framework includes comprehensive analysis tools:
 
 ### Defense Effectiveness Analysis
-- **Prompt Guard Analysis**: `examples/mitigation/analyze_prompt_guard_scores.py`
+- **Prompt Guard Analysis**: `scripts/mitigation/analyze_prompt_guard_scores.py`
   - Reads Prompt Guard CSV results
   - Computes safe/unsafe classifications
   - Provides detailed scores
 
-- **Perplexity Analysis**: `examples/mitigation/perplexity_get_counts.py`
+- **Perplexity Analysis**: `scripts/mitigation/perplexity_get_counts.py`
   - Reads perplexity-based defense CSV
   - Performs statistical tests:
     - Kolmogorov-Smirnov
